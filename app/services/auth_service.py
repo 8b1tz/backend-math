@@ -71,6 +71,13 @@ class AuthService:
             self._store.set_reset_token(email, token)
         return MessageOut(detail="If the email exists, a reset link was sent.")
 
+    def get_authenticated_email(self, authorization: Optional[str]) -> str:
+        token = self._extract_token(authorization)
+        email = self._store.get_email_for_session(token)
+        if not email:
+            raise HTTPException(status_code=401, detail="Invalid session")
+        return email
+
     def _new_session(self, email: str) -> str:
         token = security.create_session_token()
         self._store.create_session(token, email)
