@@ -22,9 +22,15 @@ class PlayerProfile:
     id: str
     email: Optional[str] = None
     display_name: Optional[str] = None
+    language: Optional[str] = None
     xp: int = 0
     level: int = 1
     progress: Dict[str, int] = field(default_factory=dict)
+    current_streak: int = 0
+    longest_streak: int = 0
+    last_login_date: Optional[str] = None
+    lessons_completed_today: int = 0
+    last_lesson_date: Optional[str] = None
     stats: PlayerStats = field(default_factory=PlayerStats)
 
 
@@ -32,9 +38,11 @@ class PlayerProfile:
 class QuestionRecord:
     id: str
     level: int
-    prompt: str
+    operation: str
+    template: str
     choices: List[str]
     answer: str
+    answer_formula: Optional[str] = None
 
 
 @dataclass
@@ -52,8 +60,10 @@ class GameSessionRecord:
 @dataclass
 class RankingEntry:
     user_id: str
+    display_name: Optional[str]
     xp: int
     level: int
+    updated_at: str
 
 
 class MemoryStore:
@@ -77,72 +87,92 @@ class MemoryStore:
             QuestionRecord(
                 id="q1",
                 level=1,
-                prompt="2 + 2 = ?",
+                operation="addition",
+                template="2 + 2 = ?",
                 choices=["3", "4", "5", "6"],
                 answer="4",
+                answer_formula="2 + 2",
             ),
             QuestionRecord(
                 id="q2",
                 level=1,
-                prompt="5 - 3 = ?",
+                operation="subtraction",
+                template="5 - 3 = ?",
                 choices=["1", "2", "3", "4"],
                 answer="2",
+                answer_formula="5 - 3",
             ),
             QuestionRecord(
                 id="q3",
                 level=1,
-                prompt="10 / 2 = ?",
+                operation="division",
+                template="10 / 2 = ?",
                 choices=["3", "5", "7", "9"],
                 answer="5",
+                answer_formula="10 / 2",
             ),
             QuestionRecord(
                 id="q4",
                 level=1,
-                prompt="3 * 4 = ?",
+                operation="multiplication",
+                template="3 * 4 = ?",
                 choices=["7", "11", "12", "13"],
                 answer="12",
+                answer_formula="3 * 4",
             ),
             QuestionRecord(
                 id="q5",
                 level=2,
-                prompt="12 - 5 = ?",
+                operation="subtraction",
+                template="12 - 5 = ?",
                 choices=["5", "6", "7", "8"],
                 answer="7",
+                answer_formula="12 - 5",
             ),
             QuestionRecord(
                 id="q6",
                 level=2,
-                prompt="9 + 8 = ?",
+                operation="addition",
+                template="9 + 8 = ?",
                 choices=["15", "16", "17", "18"],
                 answer="17",
+                answer_formula="9 + 8",
             ),
             QuestionRecord(
                 id="q7",
                 level=2,
-                prompt="6 * 3 = ?",
+                operation="multiplication",
+                template="6 * 3 = ?",
                 choices=["16", "17", "18", "19"],
                 answer="18",
+                answer_formula="6 * 3",
             ),
             QuestionRecord(
                 id="q8",
                 level=3,
-                prompt="18 / 3 = ?",
+                operation="division",
+                template="18 / 3 = ?",
                 choices=["5", "6", "7", "8"],
                 answer="6",
+                answer_formula="18 / 3",
             ),
             QuestionRecord(
                 id="q9",
                 level=3,
-                prompt="7 * 8 = ?",
+                operation="multiplication",
+                template="7 * 8 = ?",
                 choices=["54", "56", "58", "60"],
                 answer="56",
+                answer_formula="7 * 8",
             ),
             QuestionRecord(
                 id="q10",
                 level=3,
-                prompt="25 - 9 = ?",
+                operation="subtraction",
+                template="25 - 9 = ?",
                 choices=["14", "15", "16", "17"],
                 answer="16",
+                answer_formula="25 - 9",
             ),
         ]
         for question in sample:

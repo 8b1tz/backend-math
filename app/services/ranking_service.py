@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from fastapi import HTTPException
@@ -11,7 +12,7 @@ class RankingService:
         self._store = store
 
     def update(
-        self, user_id: str, xp: Optional[int], level: Optional[int]
+        self, user_id: str, xp: Optional[int], level: Optional[int], display_name: Optional[str]
     ) -> RankingEntryOut:
         profile = self._store.get_profile(user_id)
         if profile:
@@ -21,12 +22,19 @@ class RankingService:
                 profile.level = level
             xp_value = profile.xp
             level_value = profile.level
+            display_name = profile.display_name or profile.email
         else:
             if xp is None or level is None:
                 raise HTTPException(status_code=404, detail="User profile not found")
             xp_value = xp
             level_value = level
-        entry = RankingEntry(user_id=user_id, xp=xp_value, level=level_value)
+        entry = RankingEntry(
+            user_id=user_id,
+            display_name=display_name,
+            xp=xp_value,
+            level=level_value,
+            updated_at=self._timestamp(),
+        )
         self._store.set_ranking_entry(entry)
         return self._entry_with_position(entry)
 
@@ -35,9 +43,11 @@ class RankingService:
         return [
             RankingEntryOut(
                 user_id=entry.user_id,
+                display_name=entry.display_name,
                 xp=entry.xp,
                 level=entry.level,
                 position=index + 1,
+                updated_at=entry.updated_at,
             )
             for index, entry in enumerate(entries)
         ]
@@ -49,7 +59,11 @@ class RankingService:
         entry = self._store.get_ranking_entry(profile.id)
         if not entry:
             entry = RankingEntry(
-                user_id=profile.id, xp=profile.xp, level=profile.level
+                user_id=profile.id,
+                display_name=profile.display_name or profile.email,
+                xp=profile.xp,
+                level=profile.level,
+                updated_at=self._timestamp(),
             )
             self._store.set_ranking_entry(entry)
         return self._entry_with_position(entry)
@@ -60,9 +74,11 @@ class RankingService:
             if ranked.user_id == entry.user_id:
                 return RankingEntryOut(
                     user_id=ranked.user_id,
+                    display_name=ranked.display_name,
                     xp=ranked.xp,
                     level=ranked.level,
                     position=index,
+                    updated_at=ranked.updated_at,
                 )
         raise HTTPException(status_code=404, detail="Ranking entry not found")
 
@@ -70,6 +86,9 @@ class RankingService:
         entries = self._store.list_ranking()
         entries.sort(key=lambda entry: (-entry.xp, entry.user_id))
         return entries
+
+    def _timestamp(self) -> str:
+        return datetime.now(timezone.utc).isoformat()
 
 
 _service = RankingService(store)

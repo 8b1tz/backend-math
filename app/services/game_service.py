@@ -1,5 +1,6 @@
 import random
 import uuid
+from datetime import datetime, timezone
 
 from fastapi import HTTPException
 
@@ -10,6 +11,7 @@ from app.storage.memory import (
     MemoryStore,
     QuestionRecord,
     RankingEntry,
+    PlayerProfile,
     store,
 )
 
@@ -92,8 +94,15 @@ class GameService:
         profile.stats.games_played += 1
         profile.stats.questions_answered += total_questions
         profile.stats.correct_answers += correct_answers
+        self._update_daily_lessons(profile)
         self._store.set_ranking_entry(
-            RankingEntry(user_id=profile.id, xp=profile.xp, level=profile.level)
+            RankingEntry(
+                user_id=profile.id,
+                display_name=self._display_name(profile),
+                xp=profile.xp,
+                level=profile.level,
+                updated_at=self._timestamp(),
+            )
         )
         return GameFinishOut(
             session_id=session.id,
@@ -115,12 +124,29 @@ class GameService:
         return QuestionOut(
             id=question.id,
             level=question.level,
-            prompt=question.prompt,
+            operation=question.operation,
+            template=question.template,
             choices=question.choices,
         )
 
     def _time_limit(self, level: int) -> int:
         return 60 + (level * 15)
+
+    def _update_daily_lessons(self, profile: PlayerProfile) -> None:
+        today = self._today()
+        if profile.last_lesson_date != today:
+            profile.lessons_completed_today = 0
+            profile.last_lesson_date = today
+        profile.lessons_completed_today += 1
+
+    def _today(self) -> str:
+        return datetime.now(timezone.utc).date().isoformat()
+
+    def _timestamp(self) -> str:
+        return datetime.now(timezone.utc).isoformat()
+
+    def _display_name(self, profile: PlayerProfile) -> str:
+        return profile.display_name or profile.email or profile.id
 
 
 _service = GameService(store)

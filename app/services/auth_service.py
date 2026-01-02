@@ -1,11 +1,12 @@
 import uuid
+from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import HTTPException
 
 from app.core import security
 from app.models.schemas import AuthOut, MessageOut, SessionOut, UserOut
-from app.storage.memory import MemoryStore, UserRecord, store
+from app.storage.memory import MemoryStore, PlayerProfile, UserRecord, store
 
 
 class AuthService:
@@ -24,6 +25,8 @@ class AuthService:
             pw_hash_b64=security.encode_b64(pw_hash),
         )
         self._store.set_user(email, record)
+        profile = self._ensure_profile(email, record.id)
+        self._touch_login(profile)
         token = self._new_session(email)
         return AuthOut(access_token=token, user=self._user_out(email, record))
 
@@ -35,6 +38,8 @@ class AuthService:
             raise HTTPException(status_code=401, detail="Invalid credentials")
         if not security.verify_password(password, user.salt_b64, user.pw_hash_b64):
             raise HTTPException(status_code=401, detail="Invalid credentials")
+        profile = self._ensure_profile(email, user.id)
+        self._touch_login(profile)
         token = self._new_session(email)
         return AuthOut(access_token=token, user=self._user_out(email, user))
 
@@ -46,6 +51,8 @@ class AuthService:
         if not user:
             user = UserRecord(id=str(uuid.uuid4()), provider="google")
             self._store.set_user(email, user)
+        profile = self._ensure_profile(email, user.id)
+        self._touch_login(profile)
         token = self._new_session(email)
         return AuthOut(access_token=token, user=self._user_out(email, user))
 
@@ -103,6 +110,38 @@ class AuthService:
 
     def _user_out(self, email: str, user: UserRecord) -> UserOut:
         return UserOut(id=user.id, email=email, provider=user.provider)
+
+    def _ensure_profile(self, email: str, user_id: str) -> PlayerProfile:
+        profile = self._store.get_profile(user_id)
+        if profile:
+            return profile
+        profile = PlayerProfile(id=user_id, email=email, language="pt")
+        self._store.set_profile(user_id, profile)
+        return profile
+
+    def _touch_login(self, profile: PlayerProfile) -> None:
+        today = self._today()
+        last_login = self._parse_date(profile.last_login_date)
+        if last_login == today:
+            return
+        if last_login == today - timedelta(days=1):
+            profile.current_streak += 1
+        else:
+            profile.current_streak = 1
+        if profile.current_streak > profile.longest_streak:
+            profile.longest_streak = profile.current_streak
+        profile.last_login_date = today.isoformat()
+
+    def _today(self) -> date:
+        return datetime.now(timezone.utc).date()
+
+    def _parse_date(self, value: Optional[str]) -> Optional[date]:
+        if not value:
+            return None
+        try:
+            return date.fromisoformat(value)
+        except ValueError:
+            return None
 
 
 _service = AuthService(store)

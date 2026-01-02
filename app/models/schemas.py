@@ -45,25 +45,43 @@ class MessageOut(BaseModel):
 class UserCreateIn(BaseModel):
     email: Optional[str] = None
     display_name: Optional[str] = None
+    language: Optional[str] = None
     xp: Optional[int] = None
     level: Optional[int] = None
     progress: Optional[Dict[str, int]] = None
+    current_streak: Optional[int] = None
+    longest_streak: Optional[int] = None
+    last_login_date: Optional[str] = None
+    lessons_completed_today: Optional[int] = None
+    last_lesson_date: Optional[str] = None
 
 
 class UserUpdateIn(BaseModel):
     display_name: Optional[str] = None
+    language: Optional[str] = None
     xp: Optional[int] = None
     level: Optional[int] = None
     progress: Optional[Dict[str, int]] = None
+    current_streak: Optional[int] = None
+    longest_streak: Optional[int] = None
+    last_login_date: Optional[str] = None
+    lessons_completed_today: Optional[int] = None
+    last_lesson_date: Optional[str] = None
 
 
 class ProfileOut(BaseModel):
     id: str
     email: Optional[str] = None
     display_name: Optional[str] = None
+    language: Optional[str] = None
     xp: int
     level: int
     progress: Dict[str, int] = Field(default_factory=dict)
+    current_streak: int
+    longest_streak: int
+    last_login_date: Optional[str] = None
+    lessons_completed_today: int
+    last_lesson_date: Optional[str] = None
 
 
 class UserStatsOut(BaseModel):
@@ -77,7 +95,8 @@ class UserStatsOut(BaseModel):
 class QuestionOut(BaseModel):
     id: str
     level: int
-    prompt: str
+    operation: str
+    template: str
     choices: List[str]
 
 
@@ -137,13 +156,16 @@ class RankingUpdateIn(BaseModel):
     user_id: str
     xp: Optional[int] = None
     level: Optional[int] = None
+    display_name: Optional[str] = None
 
 
 class RankingEntryOut(BaseModel):
     user_id: str
+    display_name: Optional[str] = None
     xp: int
     level: int
     position: int
+    updated_at: str
 
 
 class ErrorLogIn(BaseModel):

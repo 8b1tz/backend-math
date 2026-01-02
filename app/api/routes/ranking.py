@@ -14,7 +14,7 @@ def update_ranking(
     payload: RankingUpdateIn,
     service: RankingService = Depends(get_ranking_service),
 ) -> RankingEntryOut:
-    return service.update(payload.user_id, payload.xp, payload.level)
+    return service.update(payload.user_id, payload.xp, payload.level, payload.display_name)
 
 
 @router.get("/global", response_model=List[RankingEntryOut])

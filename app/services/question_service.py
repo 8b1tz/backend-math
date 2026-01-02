@@ -24,7 +24,8 @@ class QuestionService:
         return QuestionOut(
             id=question.id,
             level=question.level,
-            prompt=question.prompt,
+            operation=question.operation,
+            template=question.template,
             choices=question.choices,
         )
 
